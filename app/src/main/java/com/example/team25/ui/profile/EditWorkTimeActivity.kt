@@ -1,5 +1,6 @@
 package com.example.team25.ui.profile
 
+
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,11 +13,12 @@ import com.example.team25.databinding.ActivityEditWorkTimeBinding
 import com.example.team25.dto.DaySchedule
 import com.example.team25.utils.DropdownUtils
 
+
 class EditWorkTimeActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityEditWorkTimeBinding
+    private lateinit var binding : ActivityEditWorkTimeBinding
     private lateinit var dayButtonLayoutPairs: Map<View, View>
-    private lateinit var daySchedules: DaySchedule
     private lateinit var autoCompleteTextViews : MutableList<AutoCompleteTextView>
+    private val daySchedules = mutableListOf<DaySchedule>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,36 +26,38 @@ class EditWorkTimeActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         initializeAutoCompleteTextViews()
+        setupDropdowns()
+        initializeDaySchedules()
         initializeDayLayoutPairs()
 
-        daySchedules = DaySchedule()
-        setupDropdowns()
         activateTimeRange()
-        setupNavigation()
-    }
 
+
+        navigateForward()
+        navigateBack()
+    }
     private fun activateTimeRange() {
         dayButtonLayoutPairs.forEach { (button, layout) ->
             button.setOnClickListener {
-                if (layout.visibility == View.VISIBLE) {
-                    layout.visibility = View.GONE
+                layout.visibility = if (layout.visibility == View.VISIBLE){
+                    resetTimeTextForLayout(layout)
                     button.setBackgroundResource(R.drawable.before_select_day_of_week)
                     (button as TextView).setTextColor(
-                        ContextCompat.getColor(button.context, R.color.blue)
-                    )
+                        ContextCompat.getColor(button.context, R.color.blue))
 
-                    resetDayTime(button.tag as? String)
-                } else {
-                    layout.visibility = View.VISIBLE
+                    View.GONE
+                }
+                else{
                     button.setBackgroundResource(R.drawable.after_select_day_of_week)
+                    resetTimeTextForLayout(layout)
                     (button as TextView).setTextColor(
-                        ContextCompat.getColor(button.context, R.color.white)
-                    )
+                        ContextCompat.getColor(button.context, R.color.white))
+                    View.VISIBLE
+
                 }
             }
         }
     }
-
     private fun initializeAutoCompleteTextViews() {
         autoCompleteTextViews = mutableListOf(
             binding.mondayStartTimeAutoCompleteTextView,
@@ -71,34 +75,83 @@ class EditWorkTimeActivity : AppCompatActivity() {
             binding.sundayStartTimeAutoCompleteTextView,
             binding.sundayEmdTimeAutoCompleteTextView
         )
+    }
+    private fun initializeDaySchedules() {
+        daySchedules.addAll(
+            listOf(
+                DaySchedule("월"),
+                DaySchedule("화"),
+                DaySchedule("수"),
+                DaySchedule("목"),
+                DaySchedule("금"),
+                DaySchedule("토"),
+                DaySchedule("일")
+            )
+        )
+    }
+    private fun updateSchedules() {
+        dayButtonLayoutPairs.entries.toList().forEachIndexed { index, (button, layout) ->
+            val startTime = getStartTimeForDay(index)
+            val endTime = getEndTimeForDay(index)
 
-        autoCompleteTextViews.forEach { autoCompleteTextView ->
-            DropdownUtils.setupDropdown(this, autoCompleteTextView, R.array.time)
-            autoCompleteTextView.setText("00:00")
+            daySchedules[index].start_time = startTime
+            daySchedules[index].end_time = endTime
         }
     }
+    private fun getStartTimeForDay(index: Int): String {
+        return when (index) {
+            0 -> binding.mondayStartTimeAutoCompleteTextView.text.toString()
+            1 -> binding.tuesdayStartTimeAutoCompleteTextView.text.toString()
+            2 -> binding.wednesdayStartTimeAutoCompleteTextView.text.toString()
+            3 -> binding.thursdayStartTimeAutoCompleteTextView.text.toString()
+            4 -> binding.fridayStartTimeAutoCompleteTextView.text.toString()
+            5 -> binding.saturdayStartTimeAutoCompleteTextView.text.toString()
+            6 -> binding.sundayStartTimeAutoCompleteTextView.text.toString()
+            else -> "00:00"
+        }
+    }
+    private fun getEndTimeForDay(index: Int): String {
+        return when (index) {
+            0 -> binding.mondayEmdTimeAutoCompleteTextView.text.toString()
+            1 -> binding.tuesEmdTimeAutoCompleteTextView.text.toString()
+            2 -> binding.wednesdayEmdTimeAutoCompleteTextView.text.toString()
+            3 -> binding.thursdayEmdTimeAutoCompleteTextView.text.toString()
+            4 -> binding.fridayEmdTimeAutoCompleteTextView.text.toString()
+            5 -> binding.saturdayEmdTimeAutoCompleteTextView.text.toString()
+            6 -> binding.sundayEmdTimeAutoCompleteTextView.text.toString()
+            else -> "00:00"
+        }
+    }
+
 
     private fun initializeDayLayoutPairs() {
         dayButtonLayoutPairs = mapOf(
-            binding.mondayBtn.apply { tag = "Monday" } to binding.mondayTimeLayout,
-            binding.tuesdayBtn.apply { tag = "Tuesday" } to binding.tuesdayTimeLayout,
-            binding.wednesdayBtn.apply { tag = "Wednesday" } to binding.wednesdayTimeLayout,
-            binding.thursdayBtn.apply { tag = "Thursday" } to binding.thursdayTimeLayout,
-            binding.fridayBtn.apply { tag = "Friday" } to binding.fridayTimeLayout,
-            binding.saturdayBtn.apply { tag = "Saturday" } to binding.saturdayTimeLayout,
-            binding.sundayBtn.apply { tag = "Sunday" } to binding.sundayTimeLayout
+            binding.mondayBtn to binding.mondayTimeLayout,
+            binding.tuesdayBtn to binding.tuesdayTimeLayout,
+            binding.wednesdayBtn to binding.wednesdayTimeLayout,
+            binding.thursdayBtn to binding.thursdayTimeLayout,
+            binding.fridayBtn to binding.fridayTimeLayout,
+            binding.saturdayBtn to binding.saturdayTimeLayout,
+            binding.sundayBtn to binding.sundayTimeLayout
         )
     }
 
-    private fun setupNavigation() {
-        binding.previousBtn.setOnClickListener {
+
+    private fun navigateBack() {
+
+        binding.previousBtn.setOnClickListener{
             onBackPressedDispatcher.onBackPressed()
         }
 
+    }
+
+    private fun navigateForward() {
+
+
         binding.editBtn.setOnClickListener {
             updateSchedules()
-            Log.d("EditWorkTimeActivity", "Day Schedules: $daySchedules")
-        }
+            Log.d("123123", "navigateForward: ${daySchedules}")
+       }
     }
     private fun setupDropdowns() {
 
@@ -106,88 +159,29 @@ class EditWorkTimeActivity : AppCompatActivity() {
             DropdownUtils.setupDropdown(this, autoCompleteTextView, R.array.time)
         }
     }
+    private fun resetTimeTextForLayout(layout: View) {
+        val autoCompleteTextViews = listOf(
+            binding.mondayStartTimeAutoCompleteTextView to binding.mondayTimeLayout,
+            binding.mondayEmdTimeAutoCompleteTextView to binding.mondayTimeLayout,
+            binding.tuesdayStartTimeAutoCompleteTextView to binding.tuesdayTimeLayout,
+            binding.tuesEmdTimeAutoCompleteTextView to binding.tuesdayTimeLayout,
+            binding.wednesdayStartTimeAutoCompleteTextView to binding.wednesdayTimeLayout,
+            binding.wednesdayEmdTimeAutoCompleteTextView to binding.wednesdayTimeLayout,
+            binding.thursdayStartTimeAutoCompleteTextView to binding.thursdayTimeLayout,
+            binding.thursdayEmdTimeAutoCompleteTextView to binding.thursdayTimeLayout,
+            binding.fridayStartTimeAutoCompleteTextView to binding.fridayTimeLayout,
+            binding.fridayEmdTimeAutoCompleteTextView to binding.fridayTimeLayout,
+            binding.saturdayStartTimeAutoCompleteTextView to binding.saturdayTimeLayout,
+            binding.saturdayEmdTimeAutoCompleteTextView to binding.saturdayTimeLayout,
+            binding.sundayStartTimeAutoCompleteTextView to binding.sundayTimeLayout,
+            binding.sundayEmdTimeAutoCompleteTextView to binding.sundayTimeLayout
+        )
 
-    private fun updateSchedules() {
-        dayButtonLayoutPairs.entries.forEach { (button, layout) ->
-            when (button.tag as String) {
-                "Monday" -> {
-                    daySchedules.monStartTime = binding.mondayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.monEndTime = binding.mondayEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Tuesday" -> {
-                    daySchedules.tueStartTime = binding.tuesdayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.tueEndTime = binding.tuesEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Wednesday" -> {
-                    daySchedules.wedStartTime = binding.wednesdayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.wedEndTime = binding.wednesdayEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Thursday" -> {
-                    daySchedules.thuStartTime = binding.thursdayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.thuEndTime = binding.thursdayEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Friday" -> {
-                    daySchedules.friStartTime = binding.fridayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.friEndTime = binding.fridayEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Saturday" -> {
-                    daySchedules.satStartTime = binding.saturdayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.satEndTime = binding.saturdayEmdTimeAutoCompleteTextView.text.toString()
-                }
-                "Sunday" -> {
-                    daySchedules.sunStartTime = binding.sundayStartTimeAutoCompleteTextView.text.toString()
-                    daySchedules.sunEndTime = binding.sundayEmdTimeAutoCompleteTextView.text.toString()
-                }
-            }
-        }
-    }
-    private fun resetAutoCompleteTextView(startTimeView: AutoCompleteTextView, endTimeView: AutoCompleteTextView) {
+        autoCompleteTextViews
+            .filter { it.second == layout }
+            .forEach { it.first.setText("00:00", false) }
 
-        startTimeView.setText("00:00", false)
-        endTimeView.setText("00:00", false)
-
-
-        DropdownUtils.setupDropdown(this, startTimeView, R.array.time)
-        DropdownUtils.setupDropdown(this, endTimeView, R.array.time)
-    }
-    private fun resetDayTime(day: String?) {
-        when (day) {
-            "Monday" -> {
-                daySchedules.monStartTime = "00:00"
-                daySchedules.monEndTime = "00:00"
-                resetAutoCompleteTextView(binding.mondayStartTimeAutoCompleteTextView, binding.mondayEmdTimeAutoCompleteTextView)
-            }
-            "Tuesday" -> {
-                daySchedules.tueStartTime = "00:00"
-                daySchedules.tueEndTime = "00:00"
-                resetAutoCompleteTextView(binding.tuesdayStartTimeAutoCompleteTextView, binding.tuesEmdTimeAutoCompleteTextView)
-            }
-            "Wednesday" -> {
-                daySchedules.wedStartTime = "00:00"
-                daySchedules.wedEndTime = "00:00"
-                resetAutoCompleteTextView(binding.wednesdayStartTimeAutoCompleteTextView, binding.wednesdayEmdTimeAutoCompleteTextView)
-            }
-            "Thursday" -> {
-                daySchedules.thuStartTime = "00:00"
-                daySchedules.thuEndTime = "00:00"
-                resetAutoCompleteTextView(binding.thursdayStartTimeAutoCompleteTextView, binding.thursdayEmdTimeAutoCompleteTextView)
-            }
-            "Friday" -> {
-                daySchedules.friStartTime = "00:00"
-                daySchedules.friEndTime = "00:00"
-                resetAutoCompleteTextView(binding.fridayStartTimeAutoCompleteTextView, binding.fridayEmdTimeAutoCompleteTextView)
-            }
-            "Saturday" -> {
-                daySchedules.satStartTime = "00:00"
-                daySchedules.satEndTime = "00:00"
-                resetAutoCompleteTextView(binding.saturdayStartTimeAutoCompleteTextView, binding.saturdayEmdTimeAutoCompleteTextView)
-            }
-            "Sunday" -> {
-                daySchedules.sunStartTime = "00:00"
-                daySchedules.sunEndTime = "00:00"
-                resetAutoCompleteTextView(binding.sundayStartTimeAutoCompleteTextView, binding.sundayEmdTimeAutoCompleteTextView)
-            }
-        }
+        updateSchedules()
     }
 
 }
